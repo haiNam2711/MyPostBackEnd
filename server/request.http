@@ -1,0 +1,137 @@
+###Get a order
+GET http://localhost:3000/orders/id=100001
+
+###Get all order 
+GET http://localhost:3000/orders/all
+
+###Get all order in post office
+GET http://localhost:3000/orders/byPostOffice/101
+
+###Get all order in warehouse
+GET http://localhost:3000/orders/byWarehouse/101
+
+###Create a order
+POST http://localhost:3000/orders/new
+Content-Type: application/json
+
+{
+    "senderName": "Hải Nam",
+    "senderPhone": "0942337072",
+    "recipientName": "Messi lùn",
+    "recipientPhone": "0942337073",
+    "senderPostOfficeId": "101",
+    "recipientPostOfficeId": "102",
+    "deliveryEmployeeId": "101"
+}
+
+###get role
+GET http://localhost:3000/user/role
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOjUsInJvbGUiOiJ3YXJlaG91c2VNYW5hZ2VyIiwiaWF0IjoxNzAyODMwMjk2fQ.HS8guJyLTC17XAUWQv8RX4sYbLq7LrjMADkkg-XR3QI
+###login
+POST http://localhost:3000/user/login
+Content-Type: application/json
+
+{
+    "username": "nhân viên bưu cục namnew",
+    "password": "matma123"
+}
+
+###register
+POST http://localhost:3000/user/register
+Content-Type: application/json
+
+{
+    "username": "nam5",
+    "password": "nam",
+    "name" : "nam",
+    "email" : "namcuong2811@gmail.com",
+    "birthdate" : "1990-01-01",
+    "postOfficeID" : 101,
+    "role" : "officeStaff"
+}
+
+###Delete a user
+DELETE  http://localhost:3000/user/6
+
+###Get all post office
+GET http://localhost:3000/postoffice/all
+###Get a post office
+GET http://localhost:3000/postoffice/101
+
+###Get all post office by warehouseID
+GET http://localhost:3000/postoffice/warehouseID=101
+
+###Create new Post Office
+POST http://localhost:3000/postoffice/new/warehouseID=102
+Content-Type: application/json
+
+{
+    "district": "Quận Thanh Xuân"
+}
+
+###Delete a Post Office
+DELETE http://localhost:3000/postoffice/101
+
+###Get all warehouses
+GET http://localhost:3000/warehouse/all
+
+###Get a warehouses
+GET http://localhost:3000/warehouse/101
+
+###Create new warehouse
+POST http://localhost:3000/warehouse/new
+Content-Type: application/json
+
+{
+    "province": "Hà Nội"
+}
+
+###Delete a warehouse
+DELETE http://localhost:3000/warehouse/101
+
+###Get a warehouse manager info
+GET http://localhost:3000/warehouse/manager/101
+
+###Get a PO manager info
+GET http://localhost:3000/postoffice/manager/101
+
+###Delete a PO manager info
+DELETE http://localhost:3000/postoffice/manager/101
+
+
+###Delete a warehouse manager
+DELETE http://localhost:3000/warehouse/manager/101
+
+###
+###
+###OFFICE MANAGER ROLE
+###
+###
+
+###Get all office staff by post office ID
+GET http://localhost:3000/user/officeStaff/101
+
+###Update a office staff
+PUT http://localhost:3000/user/6
+Content-Type: application/json
+
+{
+    "username": "nhân viên bưu cục namnew",
+    "password": "matma123",
+    "name": "nam",
+    "email": "namcuong2811@gmail.com",
+    "role" : "officeStaff",
+    "birthdate": "1990-01-01T00:00:00.000Z"
+}
+
+###
+###
+###OFFICE STAFF ROLE
+###
+###
+
+###Update order to state 1
+PUT http://localhost:3000/updatestate/100003/newNumState=1
+
+###
+GET http://localhost:3000/warehouse/allManager/
