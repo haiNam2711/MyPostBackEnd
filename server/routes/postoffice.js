@@ -60,9 +60,11 @@ router.get("/all/postofficeManagers", async (req, res) => {
 router.get('/:postOfficeID', async (req, res) => {
   try {
       const postOfficeID = req.params.postOfficeID;
-
+      console.log(postOfficeID);
       // Find the postOffice based on the provided postOfficeID
       const postOffice = await PostOffice.findOne({ postOfficeID });
+      // const postOffice = await PostOffice.find();
+      console.log(postOffice);
 
       if (!postOffice) {
           return res.status(404).json({
@@ -84,21 +86,21 @@ router.get('/:postOfficeID', async (req, res) => {
 // @route GET postoffice/warehouseID=:warehouseID
 // @desc Get all postoffice by warehouseID information
 // @access Public
-router.get('/warehouseID=:warehouseID', async (req, res) => {
-    try {
-        const warehouseID = req.params.warehouseID;
+router.get('/byWarehouse/warehouseID=:warehouseID', async (req, res) => {
+  try {
+      const warehouseID = req.params.warehouseID; // Corrected parameter name
 
-        // Ensure warehouseID is a valid number
-        if (isNaN(warehouseID)) {
-            return res.status(400).json({ success: false, message: 'Invalid warehouse ID' });
-        }
+      // Ensure warehouseID is a valid number
+      if (isNaN(warehouseID)) {
+          return res.status(400).json({ success: false, message: 'Invalid warehouse ID' });
+      }
 
-        const postOffices = await PostOffice.find({ belongToWarehouseID: warehouseID });
-        res.json({ success: true, postOffices });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Internal server error' });
-    }
+      const postOffices = await PostOffice.find({ belongToWarehouseID: warehouseID });
+      res.json({ success: true, postOffices });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
+  }
 });
 
 // @route POST /postoffice/new
@@ -179,6 +181,43 @@ router.get('/manager/:postOfficeID', async (req, res) => {
       res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
+
+// @route GET /postoffice/all/notHavePostOfficeManagers/
+// @desc Get all warehouse manager
+// @access Public
+router.get("/all/notHavePostOfficeManagers", async (req, res) => {
+  try {
+    const postOfficesWithoutManager = await PostOffice.aggregate([
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'postOfficeID',
+          foreignField: 'postOfficeID',
+          as: 'postOfficeUsers',
+        },
+      },
+      {
+        $match: {
+          postOfficeUsers: { $not: { $elemMatch: { role: 'officeManager' } } },
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Exclude _id field from the result
+          postOfficeID: 1,
+          district: 1,
+          belongToWarehouseID: 1,
+        },
+      },
+    ]);
+
+    res.json({ success: true, postOfficesWithoutManager });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // @route DELETE /postoffice/manager/:postOfficeID
 // @desc Delete a postoffice Manager by postOfficeID
 // @access Public 
