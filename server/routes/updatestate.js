@@ -19,7 +19,6 @@ router.put("/:id/newNumState=:state", async (req, res) => {
         .json({ success: false, message: "Order not found" });
     }
 
-    console.log(order.processTime.length, newState);
     if (newState >= 7) {
       return res.status(400).json({
         success: false,

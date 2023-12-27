@@ -110,9 +110,9 @@ router.get('/byWarehouse/warehouseID=:warehouseID', async (req, res) => {
 router.post('/new/warehouseID=:warehouseID', async (req, res) => {
     try {
         const warehouseID = req.params.warehouseID;
-        const { district } = req.body;
+        const { district, address } = req.body;
         // Simple validation
-            if (!district || district === '')
+            if (!district || district === '' || !address || address === '' )
             return res
                 .status(400)
                 .json({ success: false, message: 'Missing district' })
@@ -126,6 +126,7 @@ router.post('/new/warehouseID=:warehouseID', async (req, res) => {
       const newpostoffice = new PostOffice({
         postOfficeID: await getMaxPostOfficeID() + 1,
         district,
+        address,
         belongToWarehouseID: warehouseID,
       });
   
@@ -239,6 +240,48 @@ router.get("/allOrdersComing/:id", async (req, res) => {
   }
 });
 
+// @route GET /postoffice/chart/all
+// @desc Get all orders by month
+// @access Public
+router.get("/chart/all/:id", async (req, res) => {
+  try {
+    const postOfficeId = parseInt(req.params.id, 10);
+    const ordersByMonth = await Order.find()
+    .then((orders) => {
+      const ordersByMonthCount = [0,0,0,0,0,0,0,0,0,0,0,0];
+      for (const order of orders) {
+        const month = order.createdAt.getMonth();
+        if (month !== undefined && order.senderPostOfficeId === postOfficeId && order.processTime.length >= 1) {
+          ordersByMonthCount[month]++;
+        }
+        if (month !== undefined && order.recipientPostOfficeId === postOfficeId && order.processTime.length >= 7) {
+          ordersByMonthCount[month]++;
+        } 
+      }
+      return ordersByMonthCount;
+    });
+
+    const ordersSuccessByMonth = await Order.find()
+    .then((orders) => {
+      const ordersByMonthCount = [0,0,0,0,0,0,0,0,0,0,0,0];
+      for (const order of orders) {
+        if (order.timeSuccess === null) {
+          continue;
+        }
+        const month = order.timeSuccess.getMonth();
+        if (month !== undefined && order.recipientPostOfficeId === postOfficeId) {
+          ordersByMonthCount[month]++;
+        }
+      }
+      return ordersByMonthCount;
+    });
+    res.json({ success: true, order: ordersByMonth, success: ordersSuccessByMonth });
+    // Now, ordersByMonth contains an array of objects, each representing orders for a specific month in 2023
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+})
 
 // @route DELETE /postoffice/manager/:postOfficeID
 // @desc Delete a postoffice Manager by postOfficeID

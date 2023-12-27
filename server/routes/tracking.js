@@ -360,13 +360,12 @@ router.get("/chart/all", async (req, res) => {
     const ordersByMonth = await Order.find()
     .sort({ createdAt: 1 })
     .then((orders) => {
-      const ordersByMonthCount = [];
+      const ordersByMonthCount = [0,0,0,0,0,0,0,0,0,0,0,0];
       for (const order of orders) {
         const month = order.createdAt.getMonth();
         if (month !== undefined) {
-          ordersByMonthCount[month] = 0;
+          ordersByMonthCount[month]++;
         }
-        ordersByMonthCount[month]++;
       }
       return ordersByMonthCount;
     });
@@ -374,16 +373,15 @@ router.get("/chart/all", async (req, res) => {
     const ordersSuccessByMonth = await Order.find()
     .sort({ createdAt: 1 })
     .then((orders) => {
-      const ordersByMonthCount = [];
+      const ordersByMonthCount = [0,0,0,0,0,0,0,0,0,0,0,0];
       for (const order of orders) {
         if (order.timeSuccess === null) {
           continue;
         }
         const month = order.timeSuccess.getMonth();
         if (month !== undefined) {
-          ordersByMonthCount[month] = 0;
+          ordersByMonthCount[month]++;
         }
-        ordersByMonthCount[month]++;
       }
       return ordersByMonthCount;
     });
@@ -407,24 +405,39 @@ router.post("/new", async (req, res) => {
       senderPhone,
       recipientName,
       recipientPhone,
+      recipientAddress,
       senderPostOfficeId,
+      senderAddress,
       recipientPostOfficeId,
       deliveryEmployeeId,
+      kilogram,
+      type,
+      value,
+      serviceCharge,
+      quantity
     } = req.body;
+    console.log(senderAddress)
 
     const currentDate = new Date();
     const newOrder = new Order({
       orderID: (await getOrderCount()) + 1 + 100000,
       senderName,
       senderPhone,
+      senderAddress,
       recipientName,
       recipientPhone,
+      recipientAddress,
       senderPostOfficeId,
       recipientPostOfficeId,
       processTime: [new Date(currentDate.getTime() + 7 * 60 * 60 * 1000)],
       timeSuccess: null,
       deliveryEmployeeId: deliveryEmployeeId || null,
       createdAt: new Date(),
+      kilogram,
+      type,
+      value,
+      serviceCharge,
+      quantity
     });
 
     await newOrder.save();

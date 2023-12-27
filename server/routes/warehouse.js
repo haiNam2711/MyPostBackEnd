@@ -21,7 +21,6 @@ async function getMaxWarehouseID() {
   }
 }
 
-
 async function getWarehouseIDByPostOfficeID(postOfficeID) {
   try {
     const postOffice = await PostOffice.findOne({ postOfficeID });
@@ -80,9 +79,9 @@ router.get("/:warehouseID", async (req, res) => {
 // @access Public
 router.post("/new", async (req, res) => {
   try {
-    const { province } = req.body;
+    const { province, address } = req.body;
     // Simple validation
-    if (!province || province === "")
+    if (!province || province === "" || !address || address === "")
       return res
         .status(400)
         .json({ success: false, message: "Missing province" });
@@ -96,6 +95,7 @@ router.post("/new", async (req, res) => {
     const newWarehouse = new Warehouse({
       warehouseID: (await getMaxWarehouseID()) + 1,
       province,
+      address
     });
 
     await newWarehouse.save();
@@ -224,24 +224,28 @@ router.get("/allOrdersComing/:id", async (req, res) => {
   try {
     const warehouseID = parseInt(req.params.id, 10); // Parse the ID as an integer
     const orders = await Order.find({
-      $or: [
-        { processTime: { $size: 2 } },
-        { processTime: { $size: 4 } },
-      ]
+      $or: [{ processTime: { $size: 2 } }, { processTime: { $size: 4 } }],
     });
 
-    const ret = []
+    const ret = [];
     for (const order of orders) {
       const senderPostOfficeId = order.senderPostOfficeId;
       const recipientPostOfficeId = order.recipientPostOfficeId;
-      const senderWarehouseId = await getWarehouseIDByPostOfficeID(senderPostOfficeId);
-      const recipientWarehouseId = await getWarehouseIDByPostOfficeID(recipientPostOfficeId);
+      const senderWarehouseId = await getWarehouseIDByPostOfficeID(
+        senderPostOfficeId
+      );
+      const recipientWarehouseId = await getWarehouseIDByPostOfficeID(
+        recipientPostOfficeId
+      );
       if (senderWarehouseId === warehouseID && order.processTime.length === 2) {
         ret.push(order);
-      } 
-      if (recipientWarehouseId === warehouseID && order.processTime.length === 4) {
+      }
+      if (
+        recipientWarehouseId === warehouseID &&
+        order.processTime.length === 4
+      ) {
         ret.push(order);
-      } 
+      }
     }
 
     res.json({ success: true, orders: ret });
@@ -249,7 +253,45 @@ router.get("/allOrdersComing/:id", async (req, res) => {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-})
+});
+
+// @route GET /warehouse/chart/all
+// @desc Get all orders by month
+// @access Public
+router.get("/chart/all/:id", async (req, res) => {
+  try {
+    const warehouseId = parseInt(req.params.id, 10);
+    const ordersByMonth = await Order.find();
+    const ordersByMonthCount = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    for (const order of ordersByMonth) {
+      const month2 = order.processTime[2] !== undefined ? order.processTime[2].getMonth() : undefined;
+      const month4 = order.processTime[4] !== undefined ? order.processTime[4].getMonth() : undefined;
+      console.log(month2, month4);
+      const senderWarehouseId = await getWarehouseIDByPostOfficeID(order.senderPostOfficeId);
+      const recipientWarehouseId = await getWarehouseIDByPostOfficeID(order.recipientPostOfficeId);
+      if (
+        month2 !== undefined &&
+        senderWarehouseId === warehouseId
+      ) {
+        ordersByMonthCount[month2]++;
+      }
+      if (
+        month4 !== undefined &&
+        recipientWarehouseId === warehouseId
+      ) {
+        ordersByMonthCount[month4]++;
+      }
+    }
+    res.json({
+      success: true,
+      order: ordersByMonthCount
+    });
+    // Now, ordersByMonth contains an array of objects, each representing orders for a specific month in 2023
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
 
 // @route DELETE /warehouse/manager/:warehouseID
 // @desc Delete a Warehouse Manager by warehouseID
