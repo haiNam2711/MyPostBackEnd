@@ -3,6 +3,7 @@ const router = express.Router();
 const Warehouse = require("../models/Warehouse"); // Ensure this import is at the top
 const PostOffice = require("../models/PostOffice");
 const User = require("../models/User.js");
+const Order = require("../models/Order.js");
 
 async function getMaxWarehouseID() {
   try {
@@ -17,6 +18,20 @@ async function getMaxWarehouseID() {
   } catch (error) {
     console.error(error);
     return 100; // Trong trường hợp lỗi, trả về 0 hoặc một giá trị mặc định
+  }
+}
+
+
+async function getWarehouseIDByPostOfficeID(postOfficeID) {
+  try {
+    const postOffice = await PostOffice.findOne({ postOfficeID });
+    if (!postOffice) {
+      return -1;
+    }
+    return postOffice.belongToWarehouseID;
+  } catch (error) {
+    console.error(error);
+    return -1; // Trong trường hợp lỗi, trả về 0 hoặc một giá trị mặc định
   }
 }
 
@@ -133,12 +148,10 @@ router.get("/manager/:warehouseID", async (req, res) => {
     });
 
     if (!warehouseManager) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          message: "Warehouse manager not found for the specified warehouse",
-        });
+      return res.status(404).json({
+        success: false,
+        message: "Warehouse manager not found for the specified warehouse",
+      });
     }
 
     res.json({ success: true, warehouseManager });
@@ -173,34 +186,70 @@ router.get("/all/warehouseManagers", async (req, res) => {
 router.get("/all/notHaveWarehouseManagers", async (req, res) => {
   try {
     const warehousesWithoutManager = await Warehouse.aggregate([
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'warehouseID',
-            foreignField: 'warehouseID',
-            as: 'warehouseUsers',
+      {
+        $lookup: {
+          from: "users",
+          localField: "warehouseID",
+          foreignField: "warehouseID",
+          as: "warehouseUsers",
+        },
+      },
+      {
+        $match: {
+          warehouseUsers: {
+            $not: { $elemMatch: { role: "warehouseManager" } },
           },
         },
-        {
-          $match: {
-            warehouseUsers: { $not: { $elemMatch: { role: 'warehouseManager' } } },
-          },
+      },
+      {
+        $project: {
+          _id: 0, // Exclude _id field from the result
+          warehouseID: 1,
+          province: 1,
         },
-        {
-          $project: {
-            _id: 0, // Exclude _id field from the result
-            warehouseID: 1,
-            province: 1,
-          },
-        },
-      ]);
-  
-      res.json({ success: true, warehousesWithoutManager });
+      },
+    ]);
+
+    res.json({ success: true, warehousesWithoutManager });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// @route GET /warehouse/all/notHaveWarehouseManagers/
+// @desc Get all warehouse manager
+// @access Public
+router.get("/allOrdersComing/:id", async (req, res) => {
+  try {
+    const warehouseID = parseInt(req.params.id, 10); // Parse the ID as an integer
+    const orders = await Order.find({
+      $or: [
+        { processTime: { $size: 2 } },
+        { processTime: { $size: 4 } },
+      ]
+    });
+
+    const ret = []
+    for (const order of orders) {
+      const senderPostOfficeId = order.senderPostOfficeId;
+      const recipientPostOfficeId = order.recipientPostOfficeId;
+      const senderWarehouseId = await getWarehouseIDByPostOfficeID(senderPostOfficeId);
+      const recipientWarehouseId = await getWarehouseIDByPostOfficeID(recipientPostOfficeId);
+      if (senderWarehouseId === warehouseID && order.processTime.length === 2) {
+        ret.push(order);
+      } 
+      if (recipientWarehouseId === warehouseID && order.processTime.length === 4) {
+        ret.push(order);
+      } 
+    }
+
+    res.json({ success: true, orders: ret });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+})
 
 // @route DELETE /warehouse/manager/:warehouseID
 // @desc Delete a Warehouse Manager by warehouseID

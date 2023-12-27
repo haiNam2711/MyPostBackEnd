@@ -9,6 +9,7 @@ const userRouter = require('./routes/user')
 const officeRouter = require('./routes/postoffice')
 const warehouseRouter = require('./routes/warehouse')
 const updateStateRouter = require('./routes/updatestate')
+const findUser = require('./routes/finduser')
 
 const connectDB = async () => {
     try {
@@ -34,6 +35,7 @@ app.use('/user', userRouter)
 app.use('/postoffice', officeRouter)
 app.use('/warehouse', warehouseRouter)  
 app.use('/updatestate', updateStateRouter)
+app.use('/findUser', findUser)
 
 const port = 3000
 app.listen(port, () => console.log(`Example app listening on ${port}!`))

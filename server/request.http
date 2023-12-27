@@ -62,11 +62,11 @@ GET http://localhost:3000/postoffice/101
 GET http://localhost:3000/postoffice/warehouseID=101
 
 ###Create new Post Office
-POST http://localhost:3000/postoffice/new/warehouseID=102
+POST http://localhost:3000/postoffice/new/warehouseID=101
 Content-Type: application/json
 
 {
-    "district": "Quận Thanh Xuân"
+    "district": "Quận Khương Đình"
 }
 
 ###Delete a Post Office

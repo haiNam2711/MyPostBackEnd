@@ -3,6 +3,7 @@ const router = express.Router();
 
 const Order = require("../models/Order.js");
 const PostOffice = require("../models/PostOffice.js");
+const Warehouse = require("../models/Warehouse.js");
 
 async function getOrderCount() {
   try {
@@ -54,6 +55,39 @@ router.get("/id=:orderID", async (req, res) => {
     }
 
     res.json({ success: true, order });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// @route GET /orders/route/id=:orderID
+// @desc Get a order information
+// @access Public
+router.get("/route/id=:orderID", async (req, res) => {
+  try {
+    const orderID = req.params.orderID;
+
+    // Sử dụng tên trường chính xác là "orderId" trong câu truy vấn
+    const order = await Order.findOne({ orderID: orderID });
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
+    }
+
+    const senderPostOfficeId = order.senderPostOfficeId;
+    const recipientPostOfficeId = order.recipientPostOfficeId;
+    const senderWarehouseId = await getWarehouseIDByPostOfficeID(senderPostOfficeId);
+    const recipientWarehouseId = await getWarehouseIDByPostOfficeID(recipientPostOfficeId);
+
+    const senderPO = await PostOffice.findOne({ postOfficeID: senderPostOfficeId });
+    const recipientPO = await PostOffice.findOne({ postOfficeID: recipientPostOfficeId });
+    const senderWH = await Warehouse.findOne({ warehouseID: senderWarehouseId });
+    const recipientWH = await Warehouse.findOne({ warehouseID: recipientWarehouseId });
+
+    res.json({ success: true, po1: senderPO, wh1: senderWH, wh2: recipientWH , po2: recipientPO});
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -354,7 +388,7 @@ router.get("/chart/all", async (req, res) => {
       return ordersByMonthCount;
     });
     
-    res.json({ success: true, order: ordersByMonth, sucess: ordersSuccessByMonth });
+    res.json({ success: true, order: ordersByMonth, success: ordersSuccessByMonth });
     // Now, ordersByMonth contains an array of objects, each representing orders for a specific month in 2023
   } catch (error) {
     console.error(error);

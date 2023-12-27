@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const PostOffice = require('../models/PostOffice.js')
 const User = require('../models/User.js')
+const Order = require('../models/Order.js')
 
 async function getMaxPostOfficeID() {
     try {
@@ -217,6 +218,27 @@ router.get("/all/notHavePostOfficeManagers", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// @route GET /postoffice/allOrdersComing/
+// @desc Get all order coming
+// @access Public
+router.get("/allOrdersComing/:id", async (req, res) => {
+  try {
+    const postOfficeId = parseInt(req.params.id, 10); // Parse the ID as an integer
+    const orders = await Order.find({
+      $and: [
+        { recipientPostOfficeId: postOfficeId },
+        { processTime: { $size: 6 } },
+      ]
+    });
+
+    res.json({ success: true, orders });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 // @route DELETE /postoffice/manager/:postOfficeID
 // @desc Delete a postoffice Manager by postOfficeID

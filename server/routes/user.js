@@ -23,6 +23,8 @@ async function getMaxUserID() {
   }
 }
 
+
+
 // @route GET user/role
 // @desc Check if user is logged in
 // @access Public
@@ -35,12 +37,12 @@ router.get("/role", verifyToken, async (req, res) => {
         .status(400)
         .json({ success: false, message: "User not found" });
 
-    let locationID;
     if (user.role === "officeStaff" || user.role === "officeManager") {
       res.json({
         success: true,
         role: req.role,
         postOfficeID: user.postOfficeID,
+        user: user,
       });
     } else if (
       user.role === "warehouseStaff" ||
@@ -50,6 +52,7 @@ router.get("/role", verifyToken, async (req, res) => {
         success: true,
         role: req.role,
         warehouseID: user.warehouseID,
+        user: user,
       });
     }
   } catch (error) {
