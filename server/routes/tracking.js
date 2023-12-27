@@ -196,15 +196,16 @@ router.get("/byPostOffice/:postOfficeID", async (req, res) => {
             { recipientPostOfficeId: postOfficeID },
           ],
         },
-        {
-          $and: [
-            { processTime: { $exists: true, $ne: [] } },
-            { $expr: { $gte: [{ $size: "$processTime" }, 9] } },
-            { $expr: { $eq: [{ $mod: [{ $size: "$processTime" }, 2] }, 1] } },
-            { timeSuccess: null },
-            { recipientPostOfficeId: postOfficeID },
-          ],
-        },
+      ],
+    });
+
+    const isShipFailed = await Order.find({
+      $and: [
+        { processTime: { $exists: true, $ne: [] } },
+        { $expr: { $gte: [{ $size: "$processTime" }, 9] } },
+        { $expr: { $eq: [{ $mod: [{ $size: "$processTime" }, 2] }, 1] } },
+        { timeSuccess: null },
+        { recipientPostOfficeId: postOfficeID },
       ],
     });
 
@@ -233,7 +234,6 @@ router.get("/byPostOffice/:postOfficeID", async (req, res) => {
         .status(404)
         .json({ success: false, message: "Order not found" });
     }
-    29;
     var successful = [];
     for (const order of orders) {
       if (
@@ -256,6 +256,7 @@ router.get("/byPostOffice/:postOfficeID", async (req, res) => {
       inside: isInsideOfficeOrders,
       sendToSenderWH: isSendedToSenderWH,
       sendToShip: isSendedToShip,
+      isShipFailed: isShipFailed,
       shipSuccess: successful,
     });
   } catch (error) {
